@@ -1,8 +1,15 @@
 # DT2119, Lab 1 Feature Extraction
+import numpy as np
+import matplotlib.pyplot as plt
+import scipy.signal as ssi
+from scipy import fftpack
+from lab1_tools import trfbank
+from scipy.fftpack.realtransforms import dct
+from lab1_tools import *
 
 # Function given by the exercise ----------------------------------
 
-def mspec(samples, winlen = 400, winshift = 200, preempcoeff=0.97, nfft=512, samplingrate=20000)
+def mspec(samples, winlen=400, winshift=200, preempcoeff=0.97, nfft=512, samplingrate=20000):
     """Computes Mel Filterbank features.
 
     Args:
@@ -55,6 +62,12 @@ def enframe(samples, winlen, winshift):
         numpy array [N x winlen], where N is the number of windows that fit
         in the input signal
     """
+    frames = np.array(samples[0:winlen]) # array to store each frame
+    for i in range(winshift, len(samples) - winlen, winshift): # maybe start from winshift?
+        frames = np.vstack([frames, samples[i:i+winlen]]) # extract and stack frames
+        
+    return frames
+    
     
 def preemp(input, p=0.97):
     """
@@ -70,6 +83,8 @@ def preemp(input, p=0.97):
     Note (you can use the function lfilter from scipy.signal)
     """
 
+    return ssi.lfilter([1, -p], [1], input)
+
 def windowing(input):
     """
     Applies hamming window to the input frames.
@@ -82,6 +97,10 @@ def windowing(input):
     Note (you can use the function hamming from scipy.signal, include the sym=0 option
     if you want to get the same results as in the example)
     """
+    
+    hamming_window = ssi.hamming(input.shape[1], sym=False)
+    return hamming_window * input
+
 
 def powerSpectrum(input, nfft):
     """
@@ -95,6 +114,8 @@ def powerSpectrum(input, nfft):
         array of power spectra [N x nfft]
     Note: you can use the function fft from scipy.fftpack
     """
+    
+    return np.power(np.abs(fftpack.fft(input, nfft)), 2)
 
 def logMelSpectrum(input, samplingrate):
     """
@@ -110,6 +131,9 @@ def logMelSpectrum(input, samplingrate):
     Note: use the trfbank function provided in lab1_tools.py to calculate the filterbank shapes and
           nmelfilters
     """
+    
+    return np.log(input.dot(trfbank(samplingrate, input.shape[1]).T))
+
 
 def cepstrum(input, nceps):
     """
@@ -124,6 +148,8 @@ def cepstrum(input, nceps):
     Note: you can use the function dct from scipy.fftpack.realtransforms
     """
 
+    return dct(input)[:, :nceps]
+    
 def dtw(x, y, dist):
     """Dynamic Time Warping.
 
@@ -140,3 +166,19 @@ def dtw(x, y, dist):
 
     Note that you only need to define the first output for this exercise.
     """
+
+def compare(frames, example_frames):
+    """ Plots sample and example and returns True if they are equal """
+    
+    plt.pcolormesh(frames)
+    plt.show()
+    
+    plt.pcolormesh(example_frames)
+    plt.show()
+    
+    #if np.allclose(frames, example_frames) == False:
+     #   print(frames)
+      #  print(example_frames)
+    
+    #return np.allclose(frames, example_frames)
+    return np.isclose(frames, example_frames).all()
