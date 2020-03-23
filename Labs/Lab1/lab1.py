@@ -59,7 +59,7 @@ else: print("The result doesn't match the example.")
 # 4.5: Mel filterbank log spectrum
 print("Applying Mel filterbank log spectrum...")
 MSPEC = logMelSpectrum(FFT, 20000)
-if compare(log_mel_spectrum, example['mspec']): print("The result matches the example.")
+if compare(MSPEC, example['mspec']): print("The result matches the example.")
 else: print("The result doesn't match the example.")
 
 
