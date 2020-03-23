@@ -62,8 +62,11 @@ def enframe(samples, winlen, winshift):
         numpy array [N x winlen], where N is the number of windows that fit
         in the input signal
     """
-    frames = np.array(samples[0:winlen]) # array to store each frame
-    for i in range(winshift, len(samples) - winlen, winshift): # maybe start from winshift?
+    
+    frames = np.array(samples[0:winlen]) # Start array here with the first frame
+                                         # and stack all the frames on top for 
+                                         # each window shift
+    for i in range(winshift, len(samples) - winlen, winshift): 
         frames = np.vstack([frames, samples[i:i+winlen]]) # extract and stack frames
         
     return frames
@@ -82,8 +85,12 @@ def preemp(input, p=0.97):
         output: array of pre-emphasised speech samples
     Note (you can use the function lfilter from scipy.signal)
     """
-
+    
+    # For the definition of the filter coefficients, check the documentation at
+    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.lfilter.html
+    # and slide 67 in lecture 02 (alpha = p = 0.97)
     return ssi.lfilter([1, -p], [1], input)
+
 
 def windowing(input):
     """
@@ -99,6 +106,15 @@ def windowing(input):
     """
     
     hamming_window = ssi.hamming(input.shape[1], sym=False)
+    
+    # Plot the hamming window.
+    print("Plotting the hamming window shape...")
+    plt.plot(hamming_window)
+    plt.title("Hamming window")
+    plt.show()
+    
+    # Why we use hamming window at: 
+    # https://stackoverflow.com/questions/5418951/what-is-the-hamming-window-for
     return hamming_window * input
 
 
@@ -132,6 +148,10 @@ def logMelSpectrum(input, samplingrate):
           nmelfilters
     """
     
+    print("Plotting the filters in linear frequency scale...")
+    plt.plot(trfbank(samplingrate, input.shape[1])) # nfft = input.shape[1]
+    plt.title("Filters in linear frequency scale")
+    plt.show()
     return np.log(input.dot(trfbank(samplingrate, input.shape[1]).T))
 
 
@@ -175,10 +195,5 @@ def compare(frames, example_frames):
     
     plt.pcolormesh(example_frames)
     plt.show()
-    
-    #if np.allclose(frames, example_frames) == False:
-     #   print(frames)
-      #  print(example_frames)
-    
-    #return np.allclose(frames, example_frames)
+
     return np.isclose(frames, example_frames).all()
