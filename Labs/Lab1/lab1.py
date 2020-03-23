@@ -2,6 +2,7 @@ from lab1_proto import *
 import lab1_tools as tools
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.mixture import GaussianMixture
 
 
 # Load data (utterances of digits) and example
@@ -76,4 +77,31 @@ else: print("The result doesn't match the example.")
 
 
 # Apply to data
+# First step
+mfcc_features = mfcc(data[0]['samples']) # liftered
+mspec_features = mspec(data[0]['samples'])
 
+# Compute the mspec and mfcc for all utterances and stack them
+for i in range(1, len(data)):
+    mfcc_features = np.vstack((mfcc_features, mfcc(data[i]['samples']))) # liftered
+    mspec_features = np.vstack((mspec_features, mspec(data[i]['samples'])))
+
+
+# 5: Feature Correlation
+mfcc_correlation = np.corrcoef(mfcc_features.T)
+plt.title("Correlation of liftered MFCC features")
+plt.pcolormesh(mfcc_correlation)
+plt.show()
+
+mspec_correlation = np.corrcoef(mspec_features.T)
+plt.title("Correlation of MFCC features")
+plt.pcolormesh(mspec_correlation)
+plt.show()
+
+
+# 6: Speech Segments with Clustering
+# Fit a Gaussian Mixture Model to the data
+model = GaussianMixture(n_components=4, covariance_type='diag')
+model.fit(mfcc_features)
+score = np.exp(model.score_samples(mfcc_features))
+print(sum(score))
