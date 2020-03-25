@@ -3,6 +3,7 @@ import lab1_tools as tools
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.mixture import GaussianMixture
+from scipy.cluster import hierarchy
 from random import randint
 
 
@@ -29,7 +30,7 @@ def getColors(num_colors):
 data = np.load('Labs/Lab1/lab1_data.npz', allow_pickle=True)['data']
 example = np.load('Labs/Lab1/lab1_example.npz', allow_pickle=True)['example'].item()
 
-use_seven = False
+use_seven = True
 
 Q4 = False
 Q5 = False
@@ -181,7 +182,6 @@ if Q7:
     # print('\n The Global distance between utterances is: ', dist_dtw)
     # print('\n Path is: ', path)
     
-
     matrix_dtw = np.zeros((len(data),len(data)))
 
     for i in range(matrix_dtw.shape[0]):
@@ -193,4 +193,8 @@ if Q7:
     plt.pcolormesh(matrix_dtw)
     plt.show()
 
-
+    clusters = hierarchy.linkage(matrix_dtw, method='complete')
+  
+    plt.figure(figsize=(25, 10))
+    hierarchy.dendrogram(clusters, labels=tidigit2labels(data), orientation='left')
+    plt.show()
