@@ -6,6 +6,8 @@ from scipy import fftpack
 from lab1_tools import trfbank
 from scipy.fftpack.realtransforms import dct
 from lab1_tools import *
+from numpy.linalg import norm
+from scipy.spatial.distance import euclidean
 
 # Function given by the exercise ----------------------------------
 
@@ -182,10 +184,33 @@ def dtw(x, y, dist):
         d: global distance between the sequences (scalar) normalized to len(x)+len(y)
         LD: local distance between frames from x and y (NxM matrix)
         AD: accumulated distance between frames of x and y (NxM matrix)
-        path: best path thtough AD
+        path: best path through AD
 
     Note that you only need to define the first output for this exercise.
     """
+
+    LD = np.zeros((x.shape[0],y.shape[0]))
+    AD = np.copy(LD)
+    path = []
+    
+    for h in range(AD.shape[0]):
+        for k in range(AD.shape[1]):
+            prev_dist = np.zeros(3) # [[x[h-1],y[k]], [x[h-1],y[k-1]], [x[h],y[k-1]]]
+            if h>0:
+                prev_dist[0] = AD[h-1][k]
+            if k>0:
+                prev_dist[2] = AD[h][k-1]
+            if h>0 and k>0:
+                prev_dist[1] = AD[h-1][k-1]
+
+            LD[h][k] = dist(x[h],y[k])
+            
+            # prev_dist = min(dist(x[h-1],y[k]), dist(x[h-1],y[k-1]),dist(x[h],y[k-1]))
+            AD[h][k] = LD[h][k] + min(prev_dist)
+        
+        path.append((h,np.argmin(AD[h])))
+
+    return AD[-1][-1], LD, AD, np.asarray(path)
 
 def compare(frames, example_frames):
     """ Plots sample and example and returns True if they are equal """
@@ -197,3 +222,8 @@ def compare(frames, example_frames):
     plt.show()
 
     return np.isclose(frames, example_frames).all()
+
+def getEuclidean(x, y):
+    
+    # return norm(x-y,ord=2)
+    return euclidean(x,y)
