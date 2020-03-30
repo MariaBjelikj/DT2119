@@ -6,26 +6,6 @@ from sklearn.mixture import GaussianMixture
 from scipy.cluster import hierarchy
 from random import randint
 
-
-def getColors(num_colors):
-    color_list = []
-
-    r = randint(0,255)
-    g = randint(0,255)
-    b = randint(0,255)
-    step = 256 / num_colors
-    for _ in range(num_colors):
-        r += step
-        g += step
-        b += step
-        r = int(r) % 256
-        g = int(g) % 256
-        b = int(b) % 256
-        color_list.append((r,g,b))
-
-    return color_list
-
-
 # Load data (utterances of digits) and example
 data = np.load('Labs/Lab1/lab1_data.npz', allow_pickle=True)['data']
 example = np.load('Labs/Lab1/lab1_example.npz', allow_pickle=True)['example'].item()
@@ -34,8 +14,8 @@ use_seven = True
 
 Q4 = False
 Q5 = False
-Q6 = False
-Q7 = True
+Q6 = True
+Q7 = False
 
 # list_seven = [data[16], data[17], data[38], data[39]]
 # data_seven_2 = np.array((data[16], data[17], data[38], data[39]))
@@ -132,9 +112,6 @@ if Q6:
 # 6: Speech Segments with Clustering
 # Fit a Gaussian Mixture Model to the data
     
-    if use_seven:
-        data = np.array(list(filter(lambda x: x['digit'] == '7', data)))
-
     mfcc_features = mfcc(data[0]['samples']) # liftered
     mspec_features = mspec(data[0]['samples'])
 
@@ -143,51 +120,78 @@ if Q6:
         mfcc_features = np.vstack((mfcc_features, mfcc(data[i]['samples']))) # liftered
         mspec_features = np.vstack((mspec_features, mspec(data[i]['samples'])))
 
-    # num_components = [4, 8, 16, 32]
+    num_components = [4, 8, 16, 32]
+    subplots = 221
+    for component in num_components:
+        model = GaussianMixture(n_components=component, covariance_type='diag')
+        model.fit(mfcc_features)
+        score = np.exp(model.score_samples(mfcc_features))    
+        print("Score with {} components is: {}".format(component, sum(score)))
+        posteriors = model.predict_proba(mfcc_features)
 
-    # for component in num_components:
-    #     model = GaussianMixture(n_components=component, covariance_type='diag')
-    #     model.fit(mfcc_features)
-    #     score = np.exp(model.score_samples(mfcc_features))
-    #     score_y = np.exp(model.score(mfcc_features))
-    #     print("Score with {} components is: {}".format(component, sum(score)))
+        plt.subplot(subplots)
+        plt.pcolormesh(posteriors)
+        subplots += 1
+        plt.title('GMM with {} components'.format(component))
 
-    model = GaussianMixture(n_components=32, covariance_type='diag')
-    model.fit(mfcc_features)
-    score = np.exp(model.score_samples(mfcc_features))
-    score_y = np.exp(model.score(mfcc_features))
-    posteriors = model.predict_proba(mfcc_features)
-    colors = getColors(posteriors.shape[1])
-
-    print("Score with {} components is: {}".format(32, sum(score)))
-
-    for idx in range(posteriors.shape[1]):
-        color = np.asarray(colors[idx])
-        # plt.plot(posteriors[idx], c=[color], label='Component {}'.format(idx))
-        plt.plot(posteriors[idx], c=color/255.0, label='Component {}'.format(idx))
-        # plt.plot(posteriors[idx], label='Component {}'.format(idx))
-        # plt.scatter(mfcc_features[0], posteriors.T[idx], label='Component {}'.format(idx))
-
+    plt.tight_layout()
     plt.show()
+
+    if use_seven:
+        data = np.array(list(filter(lambda x: x['digit'] == '7', data)))
+
+        subplots = 221
+        for idx in range(len(data)):
+            # plt.subplots(nrows=2, ncols=2)
+            plt.subplot(subplots)
+            subplots += 1
+            plt.title('Time signal for digit {} uttered by {}'.format(data[idx]['digit'], data[idx]['gender']))
+            plt.plot(data[idx]['samples'])
+
+        plt.tight_layout()
+        plt.show()
+
+        subplots = 221
+        for idx in range(len(data)):
+
+            mfcc_features = mfcc(data[idx]['samples'])
+            plt.subplot(subplots)
+            subplots += 1
+            posteriors = model.predict_proba(mfcc_features)
+            plt.pcolormesh(posteriors)
+            plt.title("Posterior for digit {} uttered by {}".format(data[idx]['digit'], data[idx]['gender']))
+
+        plt.tight_layout()
+        plt.show()
 
 if Q7:
 # 7: Comparing Utterances
-
-    # utterance_1 = mfcc(data[16]['samples']) # liftered
-    # utterance_2 = mfcc(data[17]['samples'])
-    # dist_dtw, dist_loc, dist_acc, path = dtw(utterance_1,utterance_2,getEuclidean)
-
-    # print('\n Local distance matrix: ', dist_loc)
-    # print('\n Global distance matrix: ', dist_acc)
-    # print('\n The Global distance between utterances is: ', dist_dtw)
-    # print('\n Path is: ', path)
     
+    # --------------------------------------------------
+    # Compare two utterances
+
+    utterance_1 = mfcc(data[16]['samples']) # liftered
+    utterance_2 = mfcc(data[17]['samples'])
+    dist_DTW, dist_loc, AccD_mat, path = dtw(utterance_1, utterance_2, getEuclidean)
+
+    plt.pcolormesh(AccD_mat)
+    plt.title('Distance matrix between features')
+    plt.show()
+    
+    plt.title("Path between utterances")
+    plt.scatter(np.array(path[:])[:,0],np.array(path[:])[:,1])
+    plt.show()
+    
+    # ------------------------------------------------
+    # Compare all features
+
     matrix_dtw = np.zeros((len(data),len(data)))
 
     for i in range(matrix_dtw.shape[0]):
         for j in range(matrix_dtw.shape[1]):
-            dist_dtw, _, _, _ = dtw(mfcc(data[i]['samples']), mfcc(data[j]['samples']), getEuclidean)
-            matrix_dtw[i][j] = dist_dtw
+            # dist_DTW, _, _, _ = dtw(mfcc(data[i]['samples']), mfcc(data[j]['samples']), getEuclidean, Comp_Dist = False)
+            dist_DTW = dtw(mfcc(data[i]['samples']), mfcc(data[j]['samples']), getEuclidean, Comp_Dist = True)
+            matrix_dtw[i][j] = dist_DTW
     
     plt.title("Digit utterance comparison")
     plt.pcolormesh(matrix_dtw)
@@ -195,6 +199,8 @@ if Q7:
 
     clusters = hierarchy.linkage(matrix_dtw, method='complete')
   
+    # plt.figure(figsize=(25, 10))
     plt.figure(figsize=(25, 10))
-    hierarchy.dendrogram(clusters, labels=tidigit2labels(data), orientation='left')
+    hierarchy.dendrogram(clusters, labels=tidigit2labels(data), orientation='right')
+    plt.title('Dendrogram for all utterances')
     plt.show()

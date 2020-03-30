@@ -6,8 +6,8 @@ from scipy import fftpack
 from lab1_tools import trfbank
 from scipy.fftpack.realtransforms import dct
 from lab1_tools import *
-from numpy.linalg import norm
 from scipy.spatial.distance import euclidean
+from scipy.spatial.distance import cdist
 
 # Function given by the exercise ----------------------------------
 
@@ -172,7 +172,7 @@ def cepstrum(input, nceps):
 
     return dct(input)[:, :nceps]
     
-def dtw(x, y, dist):
+def dtw(x, y, dist, Comp_Dist = False):
     """Dynamic Time Warping.
 
     Args:
@@ -190,27 +190,32 @@ def dtw(x, y, dist):
     """
 
     LD = np.zeros((x.shape[0],y.shape[0]))
+    # LD = cdist(x,y,metric='euclidean')
     AD = np.copy(LD)
+    H, K = AD.shape
     path = []
+    idx_arr = [[1, 0], [1, 1], [0, 1]]
+    prev_idx = np.zeros((2, H, K), dtype=int)
+    h_path = H - 1
+    k_path = K - 1
     
-    for h in range(AD.shape[0]):
-        for k in range(AD.shape[1]):
-            prev_dist = np.zeros(3) # [[x[h-1],y[k]], [x[h-1],y[k-1]], [x[h],y[k-1]]]
-            if h>0:
-                prev_dist[0] = AD[h-1][k]
-            if k>0:
-                prev_dist[2] = AD[h][k-1]
-            if h>0 and k>0:
-                prev_dist[1] = AD[h-1][k-1]
-
-            LD[h][k] = dist(x[h],y[k])
-            
-            # prev_dist = min(dist(x[h-1],y[k]), dist(x[h-1],y[k-1]),dist(x[h],y[k-1]))
+    for h in range(H):
+        for k in range(K):
+            LD[h, k] = dist(x[h],y[k])
+            prev_dist = [AD[h-1, k], AD[h-1, k-1], AD[h, k-1]]
+            prev_idx[:, h, k] = idx_arr[np.argmin(prev_dist)]
             AD[h][k] = LD[h][k] + min(prev_dist)
-        
-        path.append((h,np.argmin(AD[h])))
 
-    return AD[-1][-1], LD, AD, np.asarray(path)
+    d = AD[-1][-1]
+
+    if Comp_Dist:
+        return d
+
+    while (h_path>=0 and k_path>=0):
+        path.append([h_path, k_path])
+        h_path, k_path = np.array([h_path,k_path]) - prev_idx[:, h_path, k_path]
+
+    return d, LD, AD, np.asarray(path)
 
 def compare(frames, example_frames):
     """ Plots sample and example and returns True if they are equal """
@@ -224,6 +229,4 @@ def compare(frames, example_frames):
     return np.isclose(frames, example_frames).all()
 
 def getEuclidean(x, y):
-    
-    # return norm(x-y,ord=2)
-    return euclidean(x,y)
+        return euclidean(x,y)
