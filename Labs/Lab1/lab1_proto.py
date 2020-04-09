@@ -110,10 +110,10 @@ def windowing(input):
     hamming_window = ssi.hamming(input.shape[1], sym=False)
     
     # Plot the hamming window.
-    #print("Plotting the hamming window shape...")
-    #plt.plot(hamming_window)
-    #plt.title("Hamming window")
-    #plt.show()
+    print("Plotting the hamming window shape...")
+    plt.plot(hamming_window)
+    plt.title("Hamming window")
+    plt.show()
     
     # Why we use hamming window at: 
     # https://stackoverflow.com/questions/5418951/what-is-the-hamming-window-for
