@@ -150,10 +150,10 @@ def logMelSpectrum(input, samplingrate):
           nmelfilters
     """
     
-    #print("Plotting the filters in linear frequency scale...")
-    #plt.plot(trfbank(samplingrate, input.shape[1])) # nfft = input.shape[1]
-    #plt.title("Filters in linear frequency scale")
-    #plt.show()
+    print("Plotting the filters in linear frequency scale...")
+    plt.plot(trfbank(samplingrate, input.shape[1])) # nfft = input.shape[1]
+    plt.title("Filters in linear frequency scale")
+    plt.show()
     return np.log(input.dot(trfbank(samplingrate, input.shape[1]).T))
 
 
