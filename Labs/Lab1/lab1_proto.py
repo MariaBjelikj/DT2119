@@ -109,12 +109,6 @@ def windowing(input):
     
     hamming_window = ssi.hamming(input.shape[1], sym=False)
     
-    # Plot the hamming window.
-    print("Plotting the hamming window shape...")
-    plt.plot(hamming_window)
-    plt.title("Hamming window")
-    plt.show()
-    
     # Why we use hamming window at: 
     # https://stackoverflow.com/questions/5418951/what-is-the-hamming-window-for
     return hamming_window * input
@@ -150,10 +144,6 @@ def logMelSpectrum(input, samplingrate):
           nmelfilters
     """
     
-    print("Plotting the filters in linear frequency scale...")
-    plt.plot(trfbank(samplingrate, input.shape[1])) # nfft = input.shape[1]
-    plt.title("Filters in linear frequency scale")
-    plt.show()
     return np.log(input.dot(trfbank(samplingrate, input.shape[1]).T))
 
 
@@ -218,14 +208,8 @@ def dtw(x, y, dist, Comp_Dist = False):
     return d, LD, AD, np.asarray(path)
 
 def compare(frames, example_frames):
-    """ Plots sample and example and returns True if they are equal """
+    """ Returns True if frames and example_frame are equal """
     
-    plt.pcolormesh(frames)
-    plt.show()
-    
-    plt.pcolormesh(example_frames)
-    plt.show()
-
     return np.isclose(frames, example_frames).all()
 
 def getEuclidean(x, y):
