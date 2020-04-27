@@ -29,6 +29,24 @@ def concatTwoHMMs(hmm1, hmm2):
 
     See also: the concatenating_hmms.pdf document in the lab package
     """
+    HMMs = dict()
+
+    HMMs['name'] = hmm1['name'] + hmm2['name']
+    HMMs['startprob'] = np.hstack((hmm1['startprob'][0:-1], np.multiply(hmm1['startprob'][-1], hmm2['startprob'])))
+    
+    # Stack transitiong matrices
+    temp1 = np.hstack((hmm1['transmat'][0:-1, 0:-1], hmm1['transmat'][0:-1, -1][np.newaxis].T.dot(hmm2['startprob'][np.newaxis])))
+    temp2 = np.hstack((np.zeros((hmm2['transmat'].shape[0], hmm1['transmat'].shape[1] - 1)), hmm2['transmat']))
+    HMMs['transmat'] = np.vstack((temp1, temp2))
+    
+    # Stack means
+    HMMs['means'] = np.vstack((hmm1['means'], hmm2['means']))
+    
+    # Stack covariances
+    HMMs['covars'] = np.vstack((hmm1['covars'], hmm2['covars']))
+    
+    return HMMs
+
 
 # this is already implemented, but based on concat2HMMs() above
 def concatHMMs(hmmmodels, namelist):
