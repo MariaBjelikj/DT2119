@@ -1,5 +1,5 @@
 import numpy as np
-from tools2 import *
+from lab2_tools import *
 
 def concatTwoHMMs(hmm1, hmm2):
     """ Concatenates 2 HMM models
@@ -29,20 +29,23 @@ def concatTwoHMMs(hmm1, hmm2):
 
     See also: the concatenating_hmms.pdf document in the lab package
     """
-    HMMs = dict()
-
+    HMMs = {}
     HMMs['name'] = hmm1['name'] + hmm2['name']
+
+    # Concatenate start probabilities
     HMMs['startprob'] = np.hstack((hmm1['startprob'][0:-1], np.multiply(hmm1['startprob'][-1], hmm2['startprob'])))
     
-    # Stack transitiong matrices
+    # Concatenate transition matrices
     temp1 = np.hstack((hmm1['transmat'][0:-1, 0:-1], hmm1['transmat'][0:-1, -1][np.newaxis].T.dot(hmm2['startprob'][np.newaxis])))
     temp2 = np.hstack((np.zeros((hmm2['transmat'].shape[0], hmm1['transmat'].shape[1] - 1)), hmm2['transmat']))
     HMMs['transmat'] = np.vstack((temp1, temp2))
+    HMMs['transmat'] = np.vstack((temp1, temp2))
     
-    # Stack means
+    
+    # Concatenate means
     HMMs['means'] = np.vstack((hmm1['means'], hmm2['means']))
     
-    # Stack covariances
+    # Concatenate covariances
     HMMs['covars'] = np.vstack((hmm1['covars'], hmm2['covars']))
     
     return HMMs
@@ -80,7 +83,7 @@ def concatHMMs(hmmmodels, namelist):
        wordHMMs['o'] = concatHMMs(phoneHMMs, ['sil', 'ow', 'sil'])
     """
     concat = hmmmodels[namelist[0]]
-    for idx in range(1,len(namelist)):
+    for idx in range(1, len(namelist)):
         concat = concatTwoHMMs(concat, hmmmodels[namelist[idx]])
     return concat
 
@@ -98,6 +101,7 @@ def gmmloglik(log_emlik, weights):
         gmmloglik: scalar, log likelihood of data given the GMM model.
     """
 
+
 def forward(log_emlik, log_startprob, log_transmat):
     """Forward (alpha) probabilities in log domain.
 
@@ -109,6 +113,17 @@ def forward(log_emlik, log_startprob, log_transmat):
     Output:
         forward_prob: NxM array of forward log probabilities for each of the M states in the model
     """
+    N, M = log_emlik.shape
+    forward_prob = np.zeros(log_emlik.shape)
+
+    forward_prob[0, :] = log_startprob[:-1] + log_emlik[0, :]
+
+    for n in range(1, N):
+        for j in range(M):
+            forward_prob[n, j] = logsumexp(forward_prob[n-1, :] + log_transmat[:-1, j]) + log_emlik[n, j]
+
+    return forward_prob
+
 
 def backward(log_emlik, log_startprob, log_transmat):
     """Backward (beta) probabilities in log domain.
@@ -164,3 +179,8 @@ def updateMeanAndVar(X, log_gamma, varianceFloor=5.0):
          means: MxD mean vectors for each state
          covars: MxD covariance (variance) vectors for each state
     """
+
+def compare(frames, example_frames):
+    """ Returns True if frames and example_frame are equal """
+    
+    return np.isclose(frames, example_frames).all()
