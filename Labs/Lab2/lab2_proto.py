@@ -100,6 +100,7 @@ def gmmloglik(log_emlik, weights):
     Output:
         gmmloglik: scalar, log likelihood of data given the GMM model.
     """
+ 
 
 
 def forward(log_emlik, log_startprob, log_transmat):
@@ -136,6 +137,16 @@ def backward(log_emlik, log_startprob, log_transmat):
     Output:
         backward_prob: NxM array of backward log probabilities for each of the M states in the model
     """
+    N, M = log_emlik.shape
+
+    backward_prob = np.zeros([N,M])
+
+    for i in reversed(range(N - 1)):
+        for j in range(M):
+            backward_prob[i,j] = logsumexp(log_transmat[j,:-1] + log_emlik[i+1,:] + backward_prob[i+1,:])
+
+    return backward_prob
+    
 
 def viterbi(log_emlik, log_startprob, log_transmat, forceFinalState=True):
     """Viterbi path.
@@ -151,6 +162,32 @@ def viterbi(log_emlik, log_startprob, log_transmat, forceFinalState=True):
         viterbi_loglik: log likelihood of the best path
         viterbi_path: best path
     """
+    N, M = log_emlik.shape
+    
+    V = np.zeros([N, M])
+    B = np.zeros([N, M])
+
+    # Initialization
+    V[0, :] = log_startprob[:-1] + log_emlik[0, :] # Viterbi log likelihoods
+    B[0, :] = 0 # Viterbi indices
+
+    # Induction - propagating best paths forwards
+    for i in range(1, N): # i = observation
+        for j in range(M): # j = state 
+            V[i][j] = np.max(V[i-1, :] + log_transmat[:-1, j]) + log_emlik[i][j]
+            B[i][j] = np.argmax(V[i-1, :] + log_transmat[:-1, j])
+
+    viterbi_loglik = np.max(V[-1, :])
+
+    # Backtracking 
+    viterbi_path = np.zeros(N) # best path
+    viterbi_path[-1] = np.argmax(B[-1, :]) # start from last state
+    for i in reversed(range(N - 1)):
+        viterbi_path[i] = B[i+1, int(viterbi_path[i+1])] # add the rest
+
+    return viterbi_loglik, viterbi_path
+    
+    
 
 def statePosteriors(log_alpha, log_beta):
     """State posterior (gamma) probabilities in log domain.
@@ -163,6 +200,8 @@ def statePosteriors(log_alpha, log_beta):
     Output:
         log_gamma: NxM array of gamma probabilities for each of the M states in the model
     """
+    return log_alpha + log_beta - logsumexp(log_alpha[-1,:])
+
 
 def updateMeanAndVar(X, log_gamma, varianceFloor=5.0):
     """ Update Gaussian parameters with diagonal covariance
@@ -179,6 +218,7 @@ def updateMeanAndVar(X, log_gamma, varianceFloor=5.0):
          means: MxD mean vectors for each state
          covars: MxD covariance (variance) vectors for each state
     """
+
 
 def compare(frames, example_frames):
     """ Returns True if frames and example_frame are equal """
