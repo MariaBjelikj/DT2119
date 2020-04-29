@@ -100,8 +100,7 @@ def gmmloglik(log_emlik, weights):
     Output:
         gmmloglik: scalar, log likelihood of data given the GMM model.
     """
- 
-
+    
 
 def forward(log_emlik, log_startprob, log_transmat):
     """Forward (alpha) probabilities in log domain.
@@ -218,6 +217,26 @@ def updateMeanAndVar(X, log_gamma, varianceFloor=5.0):
          means: MxD mean vectors for each state
          covars: MxD covariance (variance) vectors for each state
     """
+    N, M = log_gamma.shape
+    D = X.shape[1]
+    
+    means  = np.zeros([M, D])
+    covars = np.zeros([M, D])
+    gamma = np.exp(log_gamma)
+    
+    for i in range(M):
+        means[i, :] = np.dot(X.T, gamma[:, i]) / np.sum(gamma[:, i])
+        x = X.T - means[i,:].reshape([D, 1])
+
+        result = 0
+        for j in range(N):
+            result = result + gamma[j, i] * np.outer(x[:, j], x[:, j])
+
+        covars[i, :] = np.diag(result) / np.sum(gamma[:, i])
+
+    covars[covars < varianceFloor] = varianceFloor
+
+    return means, covars
 
 
 def compare(frames, example_frames):
