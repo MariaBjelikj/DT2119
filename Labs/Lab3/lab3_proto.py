@@ -21,7 +21,8 @@ def words2phones(wordList, pronDict, addSilence=True, addShortPause=True):
    if addSilence: phoneSymb = ['sil'] + phoneSymb + ['sil']
    if addShortPause: phoneSymb += ['sp'] 
 
-   return phoneSymb
+   # return phoneSymb
+   return 50
 
 
 def forcedAlignment(lmfcc, phoneHMMs, phoneTrans):
