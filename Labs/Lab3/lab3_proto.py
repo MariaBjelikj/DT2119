@@ -17,9 +17,9 @@ def words2phones(wordList, pronDict, addSilence=True, addShortPause=True):
 
    for digit in wordList:
       phoneSymb += pronDict[digit]
+      if addShortPause: phoneSymb += ['sp'] 
 
    if addSilence: phoneSymb = ['sil'] + phoneSymb + ['sil']
-   if addShortPause: phoneSymb += ['sp'] 
 
    return phoneSymb
 
